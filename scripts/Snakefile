@@ -1,0 +1,242 @@
+gnomadFilePath = config["gnomadFilePathArg"]
+bcftoolsPath = config["bcftoolsPathArg"]
+
+rule all:
+	input:
+		"../data/outputs/gnomAD/gn_v3_red_inf_id2_IDs.list"
+		"../data/outputs/common/gtexEqtl/eqtlCaseIds.txt",
+		"../data/outputs/common/gtexEqtl/eqtlGwasControlIds.txt",
+		"../data/outputs/common/gtexEqtl/eqtlGwasCaseIds.txt",
+		"../data/outputs/common/gtexEqtl/eqtlControlIds.txt",
+		"../data/outputs/reg/gencode.v44.cds.bed",
+		"../data/outputs/linsight/LINSIGHT_HG38_sorted.bed.gz",
+		"../data/outputs/linsight/LINSIGHT_HG38_sorted.bed.gz.tbi",
+		"../data/outputs/dvar/hg38_DVAR.score.sorted.merged.bed",
+		"../data/outputs/enf/enfHg38.txt"
+
+rule subsetGn:
+	input:
+		bedRemove = "../data/raw/reg/hla.bed",
+		vcf = f"{gnomadFilePath}"
+	output:
+		vcf = "../data/outputs/gnomAD/gn_v3_red_inf_id2.vcf.gz",
+		index = "../data/outputs/gnomAD/gn_v3_red_inf_id2.vcf.gz.csi"
+	log:
+		vcf = "../data/outputs/gnomAD/subsetGn.log",
+		index = "../data/outputs/gnomAD/subsetGnIndex.log"
+	params:
+		bcftools = f"{bcftoolsPath}"
+	threads:
+		1
+	shell:
+		r"""
+			{params.bcftools} view -T ^{input.bedRemove} -v snps --regions-overlap 2 -i 'FILTER="PASS" && INFO/AF_nfe >= 0.005 && INFO/AF_nfe <= 0.995' -Oz -o {output.vcf} {input.vcf} 2> {log.vcf}
+			{params.bcftools} index -f {output.vcf} > {log.index} 2>&1
+		"""
+
+rule extractGnIDs:
+	input:
+		vcf = "../data/outputs/gnomAD/gn_v3_red_inf_id2.vcf.gz",
+		index = "../data/outputs/gnomAD/gn_v3_red_inf_id2.vcf.gz.csi"
+	output:
+		"../data/outputs/gnomAD/gn_v3_red_inf_id2_IDs.list"
+	log:
+		"../data/outputs/gnomAD/extractGnIDs.log"
+	params:
+		bcftools = f"{bcftoolsPath}"
+	threads:
+		1
+	shell:
+		r"""
+			{params.bcftools} query -f '%ID\t%INFO/AF_nfe\n' {input.vcf} > {output} 2> {log}
+		"""
+
+rule extractGwas:
+	input:
+		gwas = "../data/raw/common/gwasFinemap/v2.1/credible_set.txt",
+		chain = "../data/raw/liftOver/hg19ToHg38.over.chain",
+		common = "../data/outputs/gnomAD/gn_v3_red_inf_id2_IDs.list"
+	log:
+		"../data/outputs/common/gwasFinemap/extractGwas.log"
+	output:
+		caseIds = "../data/outputs/common/gwasFinemap/gwasCaseIds.txt",
+		controlIds = "../data/outputs/common/gwasFinemap/gwasControlIds.txt"
+	threads:
+		1
+	shell:
+		r"""
+			Rscript --vanilla filterGwas.R --finemap {input.gwas} --chain {input.chain} --commonAf {input.common} --caseIds {output.caseIds} --controlIds {output.controlIds} > {log} 2>&1
+		"""
+
+rule extractGtex:
+	input:
+		inGtf = "../data/raw/reg/gencode.v44.annotation.gtf",
+		gtex = "../data/raw/common/gtexEqtl/CAVIAR_Results_v8_GTEx_LD_ALL_NOCUTOFF_with_Allele.txt.gz",
+		common = "../data/outputs/gnomAD/gn_v3_red_inf_id2_IDs.list",
+	log:
+		"../data/outputs/common/gtexEqtl/extractGtex.log"		
+	output:
+		caseIds = "../data/outputs/common/gtexEqtl/eqtlCaseIds.txt",
+		controlIds = "../data/outputs/common/gtexEqtl/eqtlControlIds.txt"
+	threads:
+		1
+	shell:
+		r"""
+			Rscript --vanilla filterGTEx.R --inGtf {input.inGtf} --caviar {input.gtex} --commonAf {input.common} --caseIds {output.caseIds} --controlIds {output.controlIds} > {log} 2>&1
+		"""
+
+rule extractGtexGwas:
+	input:
+		inGtf = "../data/raw/reg/gencode.v44.annotation.gtf",
+		gtex = "../data/raw/common/gtexEqtl/CAVIAR_Results_v8_GTEx_LD_ALL_NOCUTOFF_with_Allele.txt.gz",
+		common = "../data/outputs/gnomAD/gn_v3_red_inf_id2_IDs.list",
+		gwasCase = "../data/outputs/common/gwasFinemap/gwasCaseIds.txt",
+		gwasControl = "../data/outputs/common/gwasFinemap/gwasControlIds.txt"
+	log:
+		"../data/outputs/common/gtexEqtl/extractGtexGwas.log"		
+	output:
+		caseIds = "../data/outputs/common/gtexEqtl/eqtlGwasCaseIds.txt",
+		controlIds = "../data/outputs/common/gtexEqtl/eqtlGwasControlIds.txt"
+	threads:
+		1
+	shell:
+		r"""
+			Rscript --vanilla filterGTEx2.R --inGtf {input.inGtf} --caviar {input.gtex} --commonAf {input.common} --caseIds {output.caseIds} --controlIds {output.controlIds} --gwasCase {input.gwasCase} --gwasControl {input.gwasControl} > {log} 2>&1
+		"""
+
+rule extractCds:
+	input:
+		"../data/raw/reg/gencode.v44.annotation.gtf"
+	log:
+		"../data/outputs/reg/extractCds.log"
+	output:
+		"../data/outputs/reg/gencode.v44.cds.bed"
+	threads:
+		1
+	shell:
+		r"""
+			Rscript --vanilla getCds.R --inGtf {input} --outBed {output} > {log} 2>&1
+		"""
+
+rule liftLinsight:
+	input:
+		linsight = "../data/raw/linsight/LINSIGHT.bw",
+		chain = "../data/raw/liftOver/hg19ToHg38.over.chain.gz"
+	log:
+		linsightBedLog = "../data/outputs/linsight/linsightBed.log",
+		liftedBedLog = "../data/outputs/linsight/liftedBed.log",
+		liftedSortedLog = "../data/outputs/linsight/liftedSorted.log",
+		liftedSortedIndexLog = "../data/outputs/linsight/liftedSortedIndex.log"
+	output:
+		linsightBed = "../data/outputs/linsight/LINSIGHT.bed",
+		liftedBed = "../data/outputs/linsight/LINSIGHT_HG38.bed",
+		unliftedBed = "../data/outputs/linsight/LINSIGHT_HG38_unlifted.bed",
+		liftedSortedRaw = "../data/outputs/linsight/LINSIGHT_HG38_sorted.raw.bed",
+		liftedSorted = "../data/outputs/linsight/LINSIGHT_HG38_sorted.bed.gz",
+		liftedSortedIndex = "../data/outputs/linsight/LINSIGHT_HG38_sorted.bed.gz.tbi"
+	threads:
+		1
+	shell:
+		r"""
+			./bigWigToBedGraph {input.linsight} {output.linsightBed} 2> {log.linsightBedLog}
+			./liftOver {output.linsightBed} {input.chain} {output.liftedBed} {output.unliftedBed} 2> {log.liftedBedLog}
+			grep -v "#" {output.liftedBed} | sort -k1,1 -k2,2n -k3,3n -t$'\t' > {output.liftedSortedRaw} 2> {log.liftedSortedLog}
+			bedtools intersect -sorted -c -a {output.liftedSortedRaw} -b {output.liftedSortedRaw} | \
+			awk 'BEGIN{{OFS="\t"}} $NF==1 {{print $1,$2,$3,$4}}' | bgzip -c > {output.liftedSorted}
+			tabix -p bed {output.liftedSorted} 2> {log.liftedSortedIndexLog}
+		"""
+
+rule liftDvar:
+	input:
+		dvar = "../data/raw/dvar/hg19_DVAR.score.gz",
+		chain = "../data/raw/liftOver/hg19ToHg38.over.chain.gz"
+	log:
+		dvarBedLog = "../data/outputs/dvar/dvarBed.log",
+		dvarLiftedLog = "../data/outputs/dvar/hg38_DVAR.score.log",
+		dvarSortedLog = "../data/outputs/dvar/dvarSorted.log",
+		dvarMergedLog = "../data/outputs/dvar/dvarMerged.log",
+		dvarFilteredLog = "../data/outputs/dvar/dvarFiltered.log"
+	output:
+		dvarBed = "../data/outputs/dvar/hg19_DVAR.score.bed",
+		dvarLifted = "../data/outputs/dvar/hg38_DVAR.score.bed",
+		dvarUnlifted = "../data/outputs/dvar/hg38_DVAR.score_unlifted.bed",
+		dvarSorted = "../data/outputs/dvar/hg38_DVAR.score.sorted.bed",
+		dvarMergedRaw = "../data/outputs/dvar/hg38_DVAR.score.sorted.merged.raw.bed",
+		dvarMerged = "../data/outputs/dvar/hg38_DVAR.score.sorted.merged.bed"
+	threads:
+		1
+	shell:
+		r"""
+			zcat {input.dvar} | \
+			awk 'NR>1 {{print "chr"$1"\t"$2-1"\t"$2"\t"$3}}' > {output.dvarBed} 2> {log.dvarBedLog}
+			./liftOver {output.dvarBed} {input.chain} {output.dvarLifted} {output.dvarUnlifted} 2> {log.dvarLiftedLog}
+			sort -k1,1V -k2,2n {output.dvarLifted} > {output.dvarSorted} 2> {log.dvarSortedLog}
+
+			awk 'BEGIN{{OFS="\t"}}
+			NR==1{{
+				chr=$1; start=$2; end=$3; score=$4; next
+			}}
+			$1==chr && $4==score && $2<=end {{
+				if($3>end) end=$3
+				next
+			}}
+			{{
+				print chr,start,end,score
+				chr=$1; start=$2; end=$3; score=$4
+			}}
+			END{{
+				if (NR > 0)
+					print chr,start,end,score
+			}}' {output.dvarSorted} > {output.dvarMergedRaw} 2> {log.dvarMergedLog}
+			bedtools intersect -sorted -c -a {output.dvarMergedRaw} -b {output.dvarMergedRaw} 2> {log.dvarFilteredLog} | \
+			awk 'BEGIN{{OFS="\t"}} $NF==1 {{print $1,$2,$3,$4}}' > {output.dvarMerged}
+		"""
+
+rule liftEnf:
+	input:
+		"../data/raw/liftOver/hg19ToHg38.over.chain"
+	log:
+		"../data/outputs/enf/liftEnf.log"
+	output:
+		"../data/outputs/enf/enfHg38.txt"
+	threads:
+		1
+	shell:
+		r"""
+			Rscript --vanilla liftEnformer.R --chain {input} --enfDir ../data/raw/enf/ --out {output} > {log} 2>&1
+		"""
+
+#rule extractGtex:
+#	input:
+#		inGtf = "../data/raw/reg/gencode.v44.annotation.gtf",
+#		gtex = "../data/raw/common/gtexEqtl/CAVIAR_Results_v8_GTEx_LD_ALL_NOCUTOFF_with_Allele.txt.gz",
+#		common = "../data/outputs/gnomAD/gn_v3_red_inf_id2_IDs.list"
+#	log:
+#		"../data/outputs/common/gtexEqtl/extractGtex.log"		
+#	output:
+#		caseIds = "../data/outputs/common/gtexEqtl/eqtlCaseIds.txt",
+#		controlIds = "../data/outputs/common/gtexEqtl/eqtlControlIds.txt"
+#	threads:
+#		1
+#	shell:
+#		r"""
+#			Rscript --vanilla filterGTEx.R --inGtf {input.inGtf} --caviar {input.gtex} --commonAf {input.common} --caseIds {output.caseIds} --controlIds {output.controlIds} > {log} 2>&1
+#		"""
+
+#rule extractGwas:
+#	input:
+#		inGtf = "../data/raw/reg/gencode.v44.annotation.gtf",
+#		gwas = "../data/raw/common/gwasFinemap/v2.1/credible_set.txt",
+#		chain = "../data/raw/liftOver/hg19ToHg38.over.chain",
+#		common = "../data/outputs/gnomAD/gn_v3_red_inf_id2_IDs.list"
+#	log:
+#		"../data/outputs/common/gwasFinemap/extractGwas.log"
+#	output:
+#		caseIds = "../data/outputs/common/gwasFinemap/gwasCaseIds.txt",
+#		controlIds = "../data/outputs/common/gwasFinemap/gwasControlIds.txt"
+#	threads:
+#		1
+#	shell:
+#		r"""
+#			Rscript --vanilla filterGwas.R --inGtf {input.inGtf} --finemap {input.gwas} --chain {input.chain} --commonAf {input.common} --caseIds {output.caseIds} --controlIds {output.controlIds} > {log} 2>&1
+#		"""
