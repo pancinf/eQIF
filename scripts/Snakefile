@@ -64,7 +64,7 @@ rule extractGwas:
 		1
 	shell:
 		r"""
-			Rscript --vanilla filterGwas2.R --finemap {input.gwas} --chain {input.chain} --commonAf {input.common} --caseIds {output.caseIds} --controlIds {output.controlIds} > {log} 2>&1
+			Rscript --vanilla filterGwas.R --finemap {input.gwas} --chain {input.chain} --commonAf {input.common} --caseIds {output.caseIds} --controlIds {output.controlIds} > {log} 2>&1
 		"""
 
 rule extractGtex:
@@ -81,7 +81,7 @@ rule extractGtex:
 		1
 	shell:
 		r"""
-			Rscript --vanilla filterGTEx2.R --inGtf {input.inGtf} --caviar {input.gtex} --commonAf {input.common} --caseIds {output.caseIds} --controlIds {output.controlIds} > {log} 2>&1
+			Rscript --vanilla filterGTEx.R --inGtf {input.inGtf} --caviar {input.gtex} --commonAf {input.common} --caseIds {output.caseIds} --controlIds {output.controlIds} > {log} 2>&1
 		"""
 
 rule extractGtexGwas:
@@ -100,7 +100,7 @@ rule extractGtexGwas:
 		1
 	shell:
 		r"""
-			Rscript --vanilla filterGTEx2.R --inGtf {input.inGtf} --caviar {input.gtex} --commonAf {input.common} --caseIds {output.caseIds} --controlIds {output.controlIds} --gwasCase {input.gwasCase} --gwasControl {input.gwasControl} > {log} 2>&1
+			Rscript --vanilla filterGTEx.R --inGtf {input.inGtf} --caviar {input.gtex} --commonAf {input.common} --caseIds {output.caseIds} --controlIds {output.controlIds} --gwasCase {input.gwasCase} --gwasControl {input.gwasControl} > {log} 2>&1
 		"""
 
 rule extractCds:

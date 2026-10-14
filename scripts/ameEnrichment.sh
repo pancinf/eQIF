@@ -7,12 +7,12 @@ wget -O ../data/raw/ame/jaspar.meme https://jaspar.elixir.no/download/data/2026/
 
 ##
 ##Make fasta of regions
-samtools faidx ../data/raw/ref/hg38.fa --region-file ../data/outputs/common/eval/ame/regions.txt -o ../data/outputs/common/eval/ame/hg38RegRegions.fa 
+samtools faidx ../data/raw/ref/hg38.fa --region-file ../data/outputs/eval/ame/regions.txt -o ../data/outputs/eval/ame/hg38RegRegions.fa 
 
 ##
 ##Mask repeats with Dust
-dust ../data/outputs/common/eval/ame/hg38RegRegions.fa > ../data/outputs/common/eval/ame/hg38RegRegionsDust.fa
+dust ../data/outputs/eval/ame/hg38RegRegions.fa > ../data/outputs/eval/ame/hg38RegRegionsDust.fa
 
 ##
 ##Apply AME
-ame --seed 1234 --evalue-report-threshold 0.05 -oc ../data/outputs/common/eval/ame/ameOutJasparShuf --control --shuffle-- ../data/outputs/common/eval/ame/hg38RegRegionsDust.fa ../data/raw/ame/jaspar.meme
+ame --seed 1234 --evalue-report-threshold 0.05 -oc ../data/outputs/eval/ame/ameOutJasparShuf --control --shuffle-- ../data/outputs/eval/ame/hg38RegRegionsDust.fa ../data/raw/ame/jaspar.meme
