@@ -1,4 +1,4 @@
-#/!bin/bash
+#!/bin/bash
 #This script conducts FIMO analysis
 motif=$1
 

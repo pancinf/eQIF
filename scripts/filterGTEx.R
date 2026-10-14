@@ -85,7 +85,7 @@ if (is.null(opt$inGtf) |
 assignDist <- function(myDf) {
   variants <- makeGRangesFromDataFrame(
     df = myDf,
-    seqnames = "chr",
+    seqnames.field = "chr",
     start.field = "pos",
     end.field = "pos",
     starts.in.df.are.0based = FALSE
@@ -121,6 +121,8 @@ assignDist <- function(myDf) {
   res <- data.frame(
     chr = as.character(seqnames(variants)[queryHits(hits)]),
     pos = start(variants)[queryHits(hits)],
+    ref = myDf$ref[queryHits(hits)],
+    alt = myDf$alt[queryHits(hits)],
     nearest_tss_chr = as.character(seqnames(tss_gr)[subjectHits(hits)]),
     nearest_tss_pos = start(tss_gr)[subjectHits(hits)],
     strand = as.character(strand(tss_gr)[subjectHits(hits)]),

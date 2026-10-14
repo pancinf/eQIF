@@ -29,7 +29,7 @@ rule subsetGn:
 		1
 	shell:
 		r"""
-			{params.bcftools} view -T ^{input.bedRemove} -v snps --regions-overlap 2 -i 'FILTER="PASS" && INFO/AF_nfe >= 0.005 && INFO/AF_nfe <= 0.995' -Oz -o {output.vcf} {input.vcf} 2> {log.vcf}
+			{params.bcftools} view -T ^{input.bedRemove} -v snps --targets-overlap 2 -i 'FILTER="PASS" && INFO/AF_nfe >= 0.005 && INFO/AF_nfe <= 0.995' -Oz -o {output.vcf} {input.vcf} 2> {log.vcf}
 			{params.bcftools} index -f {output.vcf} > {log.index} 2>&1
 		"""
 

@@ -33,7 +33,7 @@ chain <- import.chain(opt$chain)
 myPath <- opt$enfDir
 myFiles <- list.files(path = myPath, pattern = ".tsv.bgz")
 enf <- data.frame(chr = c(),pos = c(), ref = c(), alt = c(),PC0 = c(), PC1 = c(),PC2 = c(),PC3 = c(),PC4 = c(),PC5 = c(),PC6 = c(),PC7 = c(),PC8 = c(),PC9 = c(),PC10 = c(),PC11 = c(),PC12 = c(),PC13 = c(),PC14 = c(),PC15 = c(),PC16 = c(),
-	PC17 = c(),PC18 = c(),PC19 = c(), id = c())
+	PC17 = c(),PC18 = c(),PC19 = c())
 for(i in 1:length(myFiles)){
 	enfShort <- fread(paste0(myPath,myFiles[i]), select = c(1,2,4:25), data.table = FALSE, header = TRUE)
 	enfShort <- enfShort[complete.cases(enfShort),]

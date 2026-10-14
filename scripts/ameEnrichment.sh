@@ -1,8 +1,5 @@
-#/!bin/bash
+#!/bin/bash
 #This script conducts TFBS enrichment analysis
-mkdir -p ../data/raw/ref/
-mkdir -p ../data/raw/ame
-mkdir -p ../data/outputs/ame
 wget -O ../data/raw/ame/jaspar.meme https://jaspar.elixir.no/download/data/2026/CORE/JASPAR2026_CORE_vertebrates_non-redundant_pfms_meme.txt
 
 ##
