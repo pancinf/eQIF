@@ -1,6 +1,5 @@
 #!/bin/bash
 #This script conducts TFBS enrichment analysis
-wget -O ../data/raw/ame/jaspar.meme https://jaspar.elixir.no/download/data/2026/CORE/JASPAR2026_CORE_vertebrates_non-redundant_pfms_meme.txt
 
 ##
 ##Make fasta of regions
