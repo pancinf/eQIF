@@ -65,10 +65,10 @@ Place the following files **under `data/raw/`** before execution (paths and file
 | MPRA / locus examples | `mpra/GTExMpra.txt`, `candidateLoci/mx2.txt`, `candidateLoci/sort1.txt` |
 | Motif analyses | `ref/hg38.fa`, `motifs/MA0139.2.meme`, `motifs/MA0098.4.meme`, `ame/clusters.tab`, `ame/annotation_table.txt` |
 
-Note that the file links can be found in our publication.
+Note that the file origins can be found in our publication.
 
 **Additional generated inputs for the notebook:** 
-Sei sequence-class scores for chromosomes 1–22 at `data/outputs/Sei/gn_v3_red_inf_id2_seiAll_chr{1..22}.sequence_class_scores.npy`, plus CADD/AVI lookup files created by the notebook or provided in advance (`data/outputs/cadd/cadd_hits.tsv`, `data/outputs/avi/avi_hits.tsv`). Sei score rows must match the gnomAD variant order.
+Sei sequence-class scores for chromosomes 1–22. GPU is highly recommended to comute Sei scores. The processed gnomAD VCF (including all chromosomes and a variant id inf format chr_pos_ref_alt) has to be provided.
 
 ## Running the workflow
 
